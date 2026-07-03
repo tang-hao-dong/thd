@@ -1476,7 +1476,13 @@ const UI = {
     body.innerHTML = '<div class="loading">加载中...</div>';
 
     try {
-      const entries = await DB.getHistory();
+      // GitHub Pages 模式使用内存历史，本地模式使用 IndexedDB
+      let entries;
+      if (App.isGH) {
+        entries = App._ghHistory || [];
+      } else {
+        entries = await DB.getHistory();
+      }
       if (!entries || entries.length === 0) {
         body.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>暂无浏览记录</p></div>`;
         return;
@@ -1486,10 +1492,11 @@ const UI = {
       entries.sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
       const recent = entries.slice(0, 100);
 
+      const action = App.isGH ? 'gh-read' : 'open-article';
       let html = '<div class="history-list">';
       for (const h of recent) {
         const time = Utils.formatDate(h.viewedAt);
-        html += `<div class="history-entry" data-action="open-article" data-id="${h.id}">
+        html += `<div class="history-entry" data-action="${action}" data-id="${h.id}">
           <span class="title">${this._escapeHtml(h.title)}</span>
           <span class="time">${time}</span>
         </div>`;
@@ -1511,6 +1518,7 @@ const App = {
   currentTab: 'articles',
   isGH: false,
   _ghArticles: [],
+  _ghHistory: [],
 
   async init() {
     const host = window.location.hostname;
@@ -1798,6 +1806,11 @@ const App = {
     const bodyEl = document.getElementById('detail-body');
     document.getElementById('detail-edit-btn').style.display = 'none';
     document.getElementById('detail-delete-btn').style.display = 'none';
+
+    // 记录浏览历史
+    this._ghHistory = this._ghHistory.filter(h => h.id !== article.id);
+    this._ghHistory.push({ id: article.id, title: article.title, viewedAt: new Date().toISOString() });
+    if (this._ghHistory.length > 50) this._ghHistory.shift();
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
@@ -2142,7 +2155,11 @@ const App = {
 
   async clearHistory() {
     if (!confirm('确定清空所有浏览记录？')) return;
-    await DB.clearHistory();
+    if (this.isGH) {
+      this._ghHistory = [];
+    } else {
+      await DB.clearHistory();
+    }
     UI.closeHistoryView();
     UI.showToast('历史已清空', 'success');
   },
