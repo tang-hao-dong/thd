@@ -204,6 +204,7 @@ ul{list-style:none}
   position:sticky;top:0;background:var(--surface);z-index:1;
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
+@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-body{padding:16px 20px}}
 .modal-close{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .modal-close:active{background:var(--border)}
 
@@ -393,6 +394,7 @@ ul{list-style:none}
     <div class="modal-footer">
       <button class="btn btn-secondary" data-action="edit-article" id="detail-edit-btn">编辑</button>
       <button class="btn btn-danger" data-action="delete-article" id="detail-delete-btn">删除</button>
+      <button class="btn btn-primary" data-action="close-detail" style="flex:0.6">✕ 关闭</button>
     </div>
   </div>
 </div>
@@ -955,6 +957,19 @@ const UI = {
     document.body.classList.remove('lock-scroll');
   },
 
+  _enableSwipeClose(modal, closeFn) {
+    let startY = 0, moving = false;
+    const onStart = (e) => { startY = e.touches[0].screenY; moving = true; };
+    const onMove = (e) => {
+      if (!moving) return;
+      const dy = e.touches[0].screenY - startY;
+      if (dy > 80) { closeFn(); cleanup(); }
+    };
+    const cleanup = () => { moving = false; modal.removeEventListener('touchstart', onStart); modal.removeEventListener('touchmove', onMove); };
+    modal.addEventListener('touchstart', onStart, { passive: true });
+    modal.addEventListener('touchmove', onMove, { passive: true });
+  },
+
   showToast(msg, type = 'info') {
     const container = document.getElementById('toast-container');
     const el = document.createElement('div');
@@ -1173,6 +1188,7 @@ const UI = {
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
     this._lockScroll();
+    this._enableSwipeClose(modal, () => this.closeArticleDetail());
 
     try {
       const article = await DB.getArticle(id);
@@ -1831,6 +1847,7 @@ const App = {
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
     UI._lockScroll();
+    UI._enableSwipeClose(modal, () => UI.closeArticleDetail());
     titleEl.textContent = article.title;
 
     let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
