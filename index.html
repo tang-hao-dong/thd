@@ -1517,6 +1517,55 @@ const App = {
     const isLocal = host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:';
     this.isGH = !isLocal;
 
+    // === 所有模式都需要的事件绑定 ===
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('[data-action]');
+      if (!el) return;
+      const action = el.dataset.action;
+      this.handleAction(action, el, e);
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.remove-img');
+      if (!btn) return;
+      if (btn.dataset.removeExisting !== undefined) {
+        const idx = parseInt(btn.dataset.removeExisting);
+        if (!isNaN(idx) && UI._editorExistingImages) {
+          UI._editorExistingImages.splice(idx, 1);
+          UI._renderEditorPreviews();
+        }
+      } else if (btn.dataset.removeNew !== undefined) {
+        const idx = parseInt(btn.dataset.removeNew);
+        if (!isNaN(idx) && UI._editorNewFiles) {
+          UI._editorNewFiles.splice(idx, 1);
+          UI._renderEditorPreviews();
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (!document.getElementById('article-detail-modal').classList.contains('hidden')) {
+          UI.closeArticleDetail();
+        } else if (!document.getElementById('article-editor-modal').classList.contains('hidden')) {
+          UI.closeArticleEditor();
+        } else if (!document.getElementById('history-modal').classList.contains('hidden')) {
+          UI.closeHistoryView();
+        }
+      }
+    });
+
+    document.querySelectorAll('.modal-overlay').forEach(m => {
+      m.addEventListener('click', (e) => {
+        if (e.target === m) {
+          if (m.id === 'article-detail-modal') UI.closeArticleDetail();
+          else if (m.id === 'article-editor-modal') UI.closeArticleEditor();
+          else if (m.id === 'duplicate-modal') UI.closeDuplicateCheck();
+          else if (m.id === 'history-modal') UI.closeHistoryView();
+        }
+      });
+    });
+
     if (this.isGH) {
       return this._initGHPages();
     }
@@ -1533,33 +1582,6 @@ const App = {
       if (ok) {
         const btn = document.getElementById('folder-btn');
         if (btn) btn.textContent = '📂';
-      }
-    });
-
-    // Set up event delegation
-    document.addEventListener('click', (e) => {
-      const el = e.target.closest('[data-action]');
-      if (!el) return;
-      const action = el.dataset.action;
-      this.handleAction(action, el, e);
-    });
-
-    // Handle image remove buttons in editor (delegated)
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.remove-img');
-      if (!btn) return;
-      if (btn.dataset.removeExisting !== undefined) {
-        const idx = parseInt(btn.dataset.removeExisting);
-        if (!isNaN(idx) && UI._editorExistingImages) {
-          UI._editorExistingImages.splice(idx, 1);
-          UI._renderEditorPreviews();
-        }
-      } else if (btn.dataset.removeNew !== undefined) {
-        const idx = parseInt(btn.dataset.removeNew);
-        if (!isNaN(idx) && UI._editorNewFiles) {
-          UI._editorNewFiles.splice(idx, 1);
-          UI._renderEditorPreviews();
-        }
       }
     });
 
@@ -1708,30 +1730,7 @@ const App = {
       }
     });
 
-    // Escape key closes modals
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (!document.getElementById('article-detail-modal').classList.contains('hidden')) {
-          UI.closeArticleDetail();
-        } else if (!document.getElementById('article-editor-modal').classList.contains('hidden')) {
-          UI.closeArticleEditor();
-        } else if (!document.getElementById('history-modal').classList.contains('hidden')) {
-          UI.closeHistoryView();
-        }
-      }
-    });
-
-    // Modal overlay click to close
-    document.querySelectorAll('.modal-overlay').forEach(m => {
-      m.addEventListener('click', (e) => {
-        if (e.target === m) {
-          if (m.id === 'article-detail-modal') UI.closeArticleDetail();
-          else if (m.id === 'article-editor-modal') UI.closeArticleEditor();
-          else if (m.id === 'duplicate-modal') UI.closeDuplicateCheck();
-          else if (m.id === 'history-modal') UI.closeHistoryView();
-        }
-      });
-    });
+    // (Escape and modal overlay are bound above for all modes)
 
     // Render initial view
     this.switchTab('articles');
