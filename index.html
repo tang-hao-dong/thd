@@ -14,6 +14,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;background:#FDF8F3;color:#2C1810;line-height:1.6;min-height:100dvh;overflow-x:hidden}
+body.lock-scroll{overflow:hidden;position:fixed;width:100%}
 img{max-width:100%;height:auto;display:block}
 button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
 input,textarea{font:inherit;color:inherit}
@@ -947,6 +948,13 @@ const UI = {
     return url;
   },
 
+  _lockScroll() {
+    document.body.classList.add('lock-scroll');
+  },
+  _unlockScroll() {
+    document.body.classList.remove('lock-scroll');
+  },
+
   showToast(msg, type = 'info') {
     const container = document.getElementById('toast-container');
     const el = document.createElement('div');
@@ -1164,6 +1172,7 @@ const UI = {
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
+    this._lockScroll();
 
     try {
       const article = await DB.getArticle(id);
@@ -1192,6 +1201,7 @@ const UI = {
 
   closeArticleDetail() {
     document.getElementById('article-detail-modal').classList.add('hidden');
+    this._unlockScroll();
     this._revokeObjectUrls();
   },
 
@@ -1234,6 +1244,7 @@ const UI = {
     }
 
     modal.classList.remove('hidden');
+    this._lockScroll();
     setTimeout(() => titleInput.focus(), 300);
   },
 
@@ -1241,6 +1252,7 @@ const UI = {
     document.getElementById('article-editor-modal').classList.add('hidden');
     this._editorExistingImages = null;
     this._editorNewFiles = null;
+    this._unlockScroll();
     this._revokeObjectUrls();
   },
 
@@ -1408,6 +1420,7 @@ const UI = {
     const modal = document.getElementById('duplicate-modal');
     const body = document.getElementById('duplicate-body');
     modal.classList.remove('hidden');
+    UI._lockScroll();
 
     body.innerHTML = '<div class="loading">正在分析文章……</div>';
 
@@ -1466,6 +1479,7 @@ const UI = {
 
   closeDuplicateCheck() {
     document.getElementById('duplicate-modal').classList.add('hidden');
+    this._unlockScroll();
   },
 
   // ===== 历史记录 =====
@@ -1473,6 +1487,7 @@ const UI = {
     const modal = document.getElementById('history-modal');
     const body = document.getElementById('history-body');
     modal.classList.remove('hidden');
+    UI._lockScroll();
     body.innerHTML = '<div class="loading">加载中...</div>';
 
     try {
@@ -1510,6 +1525,7 @@ const UI = {
 
   closeHistoryView() {
     document.getElementById('history-modal').classList.add('hidden');
+    this._unlockScroll();
   }
 };
 
@@ -1814,6 +1830,7 @@ const App = {
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
+    UI._lockScroll();
     titleEl.textContent = article.title;
 
     let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
