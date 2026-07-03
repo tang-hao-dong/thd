@@ -145,6 +145,40 @@ ul{list-style:none}
 .random-btn:active{transform:scale(0.98)}
 .random-btn .icon{font-size:22px;margin-right:8px}
 
+/* Search bar */
+.search-wrap{margin-bottom:12px;position:relative}
+.search-wrap input{width:100%;padding:10px 36px 10px 14px;border:1px solid var(--border);border-radius:20px;font-size:14px;background:var(--surface);outline:none;transition:border-color 0.2s}
+.search-wrap input:focus{border-color:var(--primary)}
+.search-wrap input::placeholder{color:var(--text-secondary);opacity:0.6}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:16px}
+.search-clear:active{background:var(--border)}
+
+/* History bar */
+.history-bar{display:flex;align-items:center;gap:6px;margin-bottom:14px;padding:8px 12px;background:var(--surface);border-radius:var(--radius-sm);font-size:13px;flex-wrap:wrap;box-shadow:var(--shadow-sm)}
+.history-bar .label{color:var(--text-secondary);white-space:nowrap}
+.history-item{color:var(--primary);cursor:pointer;padding:2px 8px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;font-size:13px}
+.history-item:active{background:var(--border)}
+
+/* History list */
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-entry{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.history-entry:active{background:var(--border)}
+.history-entry .title{flex:1;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-entry .time{font-size:12px;color:var(--text-secondary);white-space:nowrap;flex-shrink:0}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:20px;padding-bottom:80px;flex-wrap:wrap}
+.page-btn{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);-webkit-tap-highlight-color:transparent}
+.page-btn:active{background:var(--border)}
+.page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.page-btn.disabled{opacity:0.3;pointer-events:none}
+
+/* Sort bar */
+.sort-bar{display:flex;align-items:center;gap:6px;margin-bottom:16px;font-size:13px;flex-wrap:wrap}
+.sort-bar span{color:var(--text-secondary);margin-right:4px;white-space:nowrap}
+.sort-opt{padding:4px 10px;border-radius:12px;background:var(--surface);border:1px solid var(--border);font-size:13px;color:var(--text-secondary);cursor:pointer;transition:all 0.15s;-webkit-tap-highlight-color:transparent}
+.sort-opt.active,.sort-opt:active{background:var(--primary);color:#fff;border-color:var(--primary)}
+
 /* ===== Modal Overlay ===== */
 .modal-overlay{
   position:fixed;inset:0;z-index:200;
@@ -181,7 +215,7 @@ ul{list-style:none}
 
 /* ===== Article Detail ===== */
 .detail-body img{width:100%;border-radius:var(--radius-sm);margin-bottom:12px}
-.detail-text{font-size:18px;line-height:2;white-space:pre-wrap;word-break:break-word}
+.detail-text{font-size:20px;line-height:2.1;white-space:pre-wrap;word-break:break-word}
 .detail-date{font-size:13px;color:var(--text-secondary);margin-bottom:16px}
 
 /* ===== Editor Form ===== */
@@ -292,12 +326,12 @@ ul{list-style:none}
   .streak-header{padding:32px 24px}
   .streak-current{font-size:48px}
   .modal-content{max-width:560px}
-  #article-detail-modal .modal-content{max-width:800px}
+  #article-detail-modal .modal-content{max-width:860px;max-height:92dvh}
   .fab{bottom:32px;right:32px;width:60px;height:60px;font-size:30px}
 }
 @media(min-width:1200px){
   .article-list{grid-template-columns:repeat(4,1fr)}
-  #article-detail-modal .modal-content{max-width:960px}
+  #article-detail-modal .modal-content{max-width:1000px}
 }
 
 /* ===== Duplicate Check ===== */
@@ -323,6 +357,10 @@ ul{list-style:none}
   <header id="header">
     <span class="app-title">薰陶法</span>
     <div class="header-right">
+      <button class="header-btn" data-action="open-history" aria-label="浏览历史" title="浏览历史">📋</button>
+      <button class="header-btn" data-action="sync-data" id="sync-btn" aria-label="同步到 GitHub" title="同步到 GitHub">🔄</button>
+      <button class="header-btn" data-action="export-data" aria-label="导出数据" title="导出数据">📤</button>
+      <button class="header-btn" data-action="import-data" aria-label="导入数据" title="导入数据">📥</button>
       <button class="header-btn" data-action="open-duplicate" aria-label="查重" title="查重">🔍</button>
       <button id="folder-btn" class="header-btn" data-action="pick-folder" aria-label="图片存储位置" title="图片存储位置">📁</button>
       <span id="streak-badge" class="streak-badge"></span>
@@ -406,6 +444,23 @@ ul{list-style:none}
   </div>
 </div>
 
+<!-- History Modal -->
+<div id="history-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+  <div class="modal-content" style="max-width:600px">
+    <div class="modal-header">
+      <h2>📋 浏览历史</h2>
+      <button class="modal-close" data-action="close-history" aria-label="关闭">✕</button>
+    </div>
+    <div class="modal-body" id="history-body">
+      <div class="loading">加载中...</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" data-action="clear-history">清空历史</button>
+      <button class="btn btn-secondary" data-action="close-history">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===================================================================
    薰陶法 — 主程序
@@ -440,6 +495,25 @@ const Utils = {
     return (bytes / 1048576).toFixed(1) + 'MB';
   },
 
+  blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  },
+
+  dataUriToBlob(dataUri) {
+    const m = dataUri.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!m) return null;
+    try {
+      const bin = atob(m[2]), arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      return new Blob([arr], { type: `image/${m[1]}` });
+    } catch(e) { return null; }
+  },
+
   // 2-gram Jaccard 相似度（中文友好）
   similarity(text1, text2) {
     const clean = (t) => t.replace(/\[图片\]/g, '').replace(/\[图片缺失\]/g, '').replace(/\s+/g, '').trim();
@@ -463,7 +537,7 @@ const DB = {
   _init() {
     if (this._db) return Promise.resolve(this._db);
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('xuntaofa', 2);
+      const req = indexedDB.open('xuntaofa', 3);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
         if (!db.objectStoreNames.contains('articles')) {
@@ -474,6 +548,9 @@ const DB = {
         }
         if (!db.objectStoreNames.contains('folder_handle')) {
           db.createObjectStore('folder_handle');
+        }
+        if (!db.objectStoreNames.contains('history')) {
+          db.createObjectStore('history', { keyPath: 'id', autoIncrement: true });
         }
       };
       req.onsuccess = (e) => {
@@ -646,6 +723,43 @@ const DB = {
       req.onsuccess = () => resolve(req.result || null);
       req.onerror = () => reject(req.error);
     }));
+  },
+
+  // === 历史记录 ===
+  addHistory(entry) {
+    return this._init().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction('history', 'readwrite');
+      const store = tx.objectStore('history');
+      // 删除同篇文章的旧记录
+      const req = store.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) {
+          if (cursor.value.id === entry.id) cursor.delete();
+          cursor.continue();
+        } else {
+          store.add(entry);
+        }
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    }));
+  },
+  clearHistory() {
+    return this._init().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction('history', 'readwrite');
+      tx.objectStore('history').clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    }));
+  },
+  getHistory() {
+    return this._init().then(db => new Promise((resolve, reject) => {
+      const tx = db.transaction('history', 'readonly');
+      const req = tx.objectStore('history').getAll();
+      req.onsuccess = () => resolve(req.result || []);
+      req.onerror = () => reject(req.error);
+    }));
   }
 };
 
@@ -815,6 +929,11 @@ const FolderManager = {
 
 // ===== UI 渲染 =====
 const UI = {
+  _sortBy: 'newest',
+  _searchKeyword: '',
+  _page: 1,
+  _pageSize: 12,
+  _history: [],
   _objectUrls: [],
 
   _revokeObjectUrls() {
@@ -846,8 +965,19 @@ const UI = {
     main.innerHTML = `<div class="loading">加载中...</div>`;
 
     try {
-      const articles = await DB.getAllArticles();
-      if (!articles || articles.length === 0) {
+      // 加载历史（清理超过 50 条的旧记录）
+      try {
+        this._history = await DB.getHistory();
+        if (this._history.length > 50) {
+          const keep = this._history.slice(-50);
+          await DB.clearHistory();
+          for (const h of keep) await DB.addHistory(h);
+          this._history = keep;
+        }
+      } catch(e) { this._history = []; }
+
+      const allArticles = await DB.getAllArticles();
+      if (!allArticles || allArticles.length === 0) {
         main.innerHTML = `
           <div class="empty-state">
             <div class="icon">📚</div>
@@ -859,20 +989,68 @@ const UI = {
         return;
       }
 
-      const sorted = articles.sort((a, b) =>
-        new Date(b.createdAt) - new Date(a.createdAt)
-      );
+      // 排序
+      const sorters = {
+        'newest':     (a,b) => new Date(b.createdAt) - new Date(a.createdAt),
+        'oldest':     (a,b) => new Date(a.createdAt) - new Date(b.createdAt),
+        'title-asc':  (a,b) => a.title.localeCompare(b.title, 'zh'),
+        'title-desc': (a,b) => b.title.localeCompare(a.title, 'zh'),
+      };
+      const sorted = allArticles.sort(sorters[this._sortBy] || sorters.newest);
+
+      // 搜索过滤
+      const kw = this._searchKeyword.trim().toLowerCase();
+      const filtered = kw
+        ? sorted.filter(a => a.title.toLowerCase().includes(kw) || a.content.toLowerCase().includes(kw))
+        : sorted;
 
       this._revokeObjectUrls();
+
+      // 分页
+      const totalPages = Math.max(1, Math.ceil(filtered.length / this._pageSize));
+      if (this._page > totalPages) this._page = totalPages;
+      const start = (this._page - 1) * this._pageSize;
+      const pageItems = filtered.slice(start, start + this._pageSize);
+
+      // 排序选项
+      const opts = [
+        ['newest','最新'], ['oldest','最早'], ['title-asc','A-Z'], ['title-desc','Z-A']
+      ];
+      const sortHtml = opts.map(([k,label]) =>
+        `<button class="sort-opt${this._sortBy===k?' active':''}" data-action="sort-articles" data-sort="${k}">${label}</button>`
+      ).join('');
+
+      // 历史记录
+      let historyHtml = '';
+      if (this._history.length > 0) {
+        const items = this._history.slice(-10).reverse();
+        historyHtml = `<div class="history-bar">
+          <span class="label">📖 最近阅读：</span>
+          ${items.map(h => `<span class="history-item" data-action="open-article" data-id="${h.id}">${this._escapeHtml(h.title)}</span>`).join('')}
+        </div>`;
+      }
+
+      // 搜索框
+      const searchHtml = `<div class="search-wrap">
+        <input type="text" id="search-input" placeholder="搜索文章标题或正文……" value="${this._escapeHtml(this._searchKeyword)}" data-action="search-input">
+        ${kw ? `<button class="search-clear" data-action="clear-search">✕</button>` : ''}
+      </div>`;
 
       let html = `<div class="random-section">
         <button class="random-btn" data-action="random-pick">
           <span class="icon">🎲</span> 随机一篇
         </button>
       </div>
+      ${historyHtml}
+      ${searchHtml}
+      <div class="sort-bar">
+        <span style="font-weight:600;color:var(--primary)">共 ${allArticles.length} 篇</span>
+        ${kw ? `<span style="color:var(--text-secondary)">（搜索到 ${filtered.length} 篇）</span>` : ''}
+        <span>&nbsp;| 排序：</span>${sortHtml}
+      </div>
       <div class="article-list">`;
 
-      for (const a of sorted) {
+      for (const a of pageItems) {
         const date = Utils.formatDate(a.createdAt);
         const excerpt = Utils.truncate(a.content, 100);
         let thumbs = '';
@@ -910,9 +1088,34 @@ const UI = {
       }
 
       html += '</div>';
+
+      // 分页控件
+      if (totalPages > 1) {
+        html += '<div class="pagination">';
+        html += `<button class="page-btn${this._page<=1?' disabled':''}" data-action="page" data-page="${this._page-1}">‹</button>`;
+        for (let p = 1; p <= totalPages; p++) {
+          html += `<button class="page-btn${p===this._page?' active':''}" data-action="page" data-page="${p}">${p}</button>`;
+        }
+        html += `<button class="page-btn${this._page>=totalPages?' disabled':''}" data-action="page" data-page="${this._page+1}">›</button>`;
+        html += '</div>';
+      }
+
       main.innerHTML = html;
       document.getElementById('fab').classList.remove('hidden');
       this.updateStreakBadge();
+
+      // 搜索输入事件（延迟触发）
+      const inp = document.getElementById('search-input');
+      if (inp) {
+        inp.addEventListener('input', () => {
+          clearTimeout(inp._timer);
+          inp._timer = setTimeout(() => {
+            this._searchKeyword = inp.value;
+            this._page = 1;
+            this.renderArticleList();
+          }, 300);
+        });
+      }
     } catch (err) {
       main.innerHTML = `<div class="empty-state"><p>加载失败: ${err.message}</p></div>`;
     }
@@ -973,6 +1176,11 @@ const UI = {
       titleEl.textContent = article.title;
       editBtn.dataset.id = article.id;
       deleteBtn.dataset.id = article.id;
+
+      // 记录阅读历史
+      try {
+        await DB.addHistory({ id: article.id, title: article.title, viewedAt: new Date().toISOString() });
+      } catch(e) { /* history cleanup handled on next read */ }
 
       const dateHtml = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
       const contentHtml = await this._renderInlineContent(article.content, article.images);
@@ -1258,14 +1466,63 @@ const UI = {
 
   closeDuplicateCheck() {
     document.getElementById('duplicate-modal').classList.add('hidden');
+  },
+
+  // ===== 历史记录 =====
+  async openHistoryView() {
+    const modal = document.getElementById('history-modal');
+    const body = document.getElementById('history-body');
+    modal.classList.remove('hidden');
+    body.innerHTML = '<div class="loading">加载中...</div>';
+
+    try {
+      const entries = await DB.getHistory();
+      if (!entries || entries.length === 0) {
+        body.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>暂无浏览记录</p></div>`;
+        return;
+      }
+
+      // 按时间倒序
+      entries.sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
+      const recent = entries.slice(0, 100);
+
+      let html = '<div class="history-list">';
+      for (const h of recent) {
+        const time = Utils.formatDate(h.viewedAt);
+        html += `<div class="history-entry" data-action="open-article" data-id="${h.id}">
+          <span class="title">${this._escapeHtml(h.title)}</span>
+          <span class="time">${time}</span>
+        </div>`;
+      }
+      html += '</div>';
+      body.innerHTML = html;
+    } catch (err) {
+      body.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
+    }
+  },
+
+  closeHistoryView() {
+    document.getElementById('history-modal').classList.add('hidden');
   }
 };
 
 // ===== 主应用 =====
 const App = {
   currentTab: 'articles',
+  isGH: false,
+  _ghArticles: [],
 
-  init() {
+  async init() {
+    const host = window.location.hostname;
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || window.location.protocol === 'file:';
+    this.isGH = !isLocal;
+
+    if (this.isGH) {
+      return this._initGHPages();
+    }
+
+    // === 本地编辑模式 ===
+
     // Register service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -1458,6 +1715,8 @@ const App = {
           UI.closeArticleDetail();
         } else if (!document.getElementById('article-editor-modal').classList.contains('hidden')) {
           UI.closeArticleEditor();
+        } else if (!document.getElementById('history-modal').classList.contains('hidden')) {
+          UI.closeHistoryView();
         }
       }
     });
@@ -1469,12 +1728,151 @@ const App = {
           if (m.id === 'article-detail-modal') UI.closeArticleDetail();
           else if (m.id === 'article-editor-modal') UI.closeArticleEditor();
           else if (m.id === 'duplicate-modal') UI.closeDuplicateCheck();
+          else if (m.id === 'history-modal') UI.closeHistoryView();
         }
       });
     });
 
     // Render initial view
     this.switchTab('articles');
+  },
+
+  // === GitHub Pages 只读模式 ===
+  async _initGHPages() {
+    // 隐藏编辑控制
+    document.getElementById('fab').classList.add('hidden');
+    document.querySelectorAll('[data-action="add-article"],[data-action="delete-article"],[data-action="edit-article"]')
+      .forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.header-btn[data-action="export-data"],.header-btn[data-action="import-data"],.header-btn[data-action="pick-folder"]')
+      .forEach(el => el.style.display = 'none');
+    // 隐藏签到标签
+    document.querySelector('[data-tab="checkin"]')?.remove();
+
+    try {
+      const resp = await fetch('data/data.json?_=' + Date.now());
+      if (!resp.ok) throw new Error('Not found');
+      this._ghArticles = await resp.json();
+      if (!this._ghArticles.articles) throw new Error('Invalid data');
+    } catch (e) {
+      document.getElementById('main-content').innerHTML =
+        `<div class="empty-state"><div class="icon">📚</div><p style="font-size:16px">薰陶法</p><p style="font-size:14px;color:var(--text-secondary);margin-top:8px">暂无数据，请在本地编辑后同步到 GitHub</p></div>`;
+      return;
+    }
+
+    this.currentTab = 'articles';
+    App._renderGHList();
+  },
+
+  _renderGHList() {
+    const main = document.getElementById('main-content');
+    const data = this._ghArticles;
+    if (!data || !data.articles || data.articles.length === 0) {
+      main.innerHTML = `<div class="empty-state"><div class="icon">📚</div><p>暂无文章</p></div>`;
+      return;
+    }
+    const articles = data.articles.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    let html = `<div class="random-section"><button class="random-btn" data-action="random-pick"><span class="icon">🎲</span> 随机一篇</button></div>
+    <div class="article-list">`;
+    for (const a of articles) {
+      const date = Utils.formatDate(a.createdAt);
+      const excerpt = Utils.truncate(a.content, 100);
+      html += `<div class="article-card" data-id="${a.id}">
+        <div class="card-body">
+          <div class="card-title">${UI._escapeHtml(a.title)}</div>
+          <div class="card-excerpt">${UI._escapeHtml(excerpt)}</div>
+          <div class="card-meta"><span>${date}</span>
+            <button class="btn btn-secondary" data-action="gh-read" data-id="${a.id}">阅读</button>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+    main.innerHTML = html;
+    document.getElementById('fab')?.classList.add('hidden');
+  },
+
+  _renderGHDetail(id) {
+    const article = this._ghArticles.articles.find(a => a.id === id);
+    if (!article) { UI.showToast('文章不存在', 'error'); return; }
+    const modal = document.getElementById('article-detail-modal');
+    const titleEl = document.getElementById('detail-title');
+    const bodyEl = document.getElementById('detail-body');
+    document.getElementById('detail-edit-btn').style.display = 'none';
+    document.getElementById('detail-delete-btn').style.display = 'none';
+
+    bodyEl.innerHTML = '<div class="loading">加载中...</div>';
+    modal.classList.remove('hidden');
+    titleEl.textContent = article.title;
+
+    let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
+
+    // 内联渲染带 [图片] 标记的内容
+    const content = article.content || '';
+    const images = article.images || [];
+    if (content.includes('[图片]') && images.length > 0) {
+      const parts = content.split('[图片]');
+      html += '<div class="detail-text">';
+      for (let i = 0; i < parts.length; i++) {
+        html += UI._escapeHtml(parts[i]);
+        if (i < images.length) {
+          const img = images[i];
+          if (typeof img === 'object' && img.data) {
+            html += `<img src="${img.data}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy">`;
+          } else if (typeof img === 'string') {
+            html += `<img src="data/images/${img}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
+          }
+        }
+      }
+      html += '</div>';
+    } else if (images.length > 0) {
+      for (const img of images) {
+        if (typeof img === 'object' && img.data) {
+          html += `<img src="${img.data}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy">`;
+        } else if (typeof img === 'string') {
+          html += `<img src="data/images/${img}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
+        }
+      }
+      html += `<div class="detail-text">${UI._escapeHtml(content)}</div>`;
+    } else {
+      html += `<div class="detail-text">${UI._escapeHtml(content)}</div>`;
+    }
+
+    bodyEl.innerHTML = html;
+  },
+
+  async syncData() {
+    try {
+      const articles = await DB.getAllArticles();
+      const checkins = await DB.getCheckinData();
+      const exported = { version: 2, exportedAt: new Date().toISOString(), articles: [], checkins };
+
+      for (const a of articles) {
+        const imageNames = [];
+        if (a.images && a.images.length > 0) {
+          for (const img of a.images) {
+            if (typeof img === 'string') imageNames.push(img);
+            else if (img instanceof Blob) imageNames.push(img.name || 'image.jpg');
+          }
+        }
+        exported.articles.push({
+          id: a.id, title: a.title, content: a.content,
+          images: imageNames,
+          createdAt: a.createdAt, updatedAt: a.updatedAt
+        });
+      }
+
+      const json = JSON.stringify(exported, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'data.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      const n = exported.articles.length;
+      UI.showToast(`已生成 data.json（${n} 篇文章），请放入 data/ 目录后 git push`, 'success');
+    } catch (err) {
+      UI.showToast('同步失败: ' + err.message, 'error');
+    }
   },
 
   handleAction(action, el, e) {
@@ -1525,6 +1923,40 @@ const App = {
       case 'close-duplicate':
         UI.closeDuplicateCheck();
         break;
+      case 'export-data':
+        this.exportData();
+        break;
+      case 'import-data':
+        this.importData();
+        break;
+      case 'sync-data':
+        this.syncData();
+        break;
+      case 'gh-read':
+        this._renderGHDetail(el.dataset.id);
+        break;
+      case 'page':
+        UI._page = parseInt(el.dataset.page);
+        UI.renderArticleList();
+        break;
+      case 'open-history':
+        UI.openHistoryView();
+        break;
+      case 'close-history':
+        UI.closeHistoryView();
+        break;
+      case 'clear-history':
+        this.clearHistory();
+        break;
+      case 'clear-search':
+        UI._searchKeyword = '';
+        UI._page = 1;
+        UI.renderArticleList();
+        break;
+      case 'sort-articles':
+        UI._sortBy = el.dataset.sort;
+        UI.renderArticleList();
+        break;
       case 'dup-delete':
         this.dupDelete(el.dataset.id);
         break;
@@ -1544,6 +1976,16 @@ const App = {
   },
 
   async randomPick() {
+    if (this.isGH) {
+      const articles = this._ghArticles?.articles;
+      if (!articles || articles.length === 0) {
+        UI.showToast('还没有文章', 'info'); return;
+      }
+      const a = articles[Math.floor(Math.random() * articles.length)];
+      UI.showToast('🎲 抽到一篇！', 'success');
+      setTimeout(() => this._renderGHDetail(a.id), 300);
+      return;
+    }
     try {
       const article = await DB.getRandomArticle();
       if (!article) {
@@ -1699,6 +2141,13 @@ const App = {
     }
   },
 
+  async clearHistory() {
+    if (!confirm('确定清空所有浏览记录？')) return;
+    await DB.clearHistory();
+    UI.closeHistoryView();
+    UI.showToast('历史已清空', 'success');
+  },
+
   async dupDelete(id) {
     if (!confirm('确定删除这篇文章？')) return;
     try {
@@ -1713,6 +2162,110 @@ const App = {
       UI.openDuplicateCheck();
     } catch (err) {
       UI.showToast('删除失败: ' + err.message, 'error');
+    }
+  },
+
+  async exportData() {
+    try {
+      const articles = await DB.getAllArticles();
+      const checkins = await DB.getCheckinData();
+      const exported = { version: 2, exportedAt: new Date().toISOString(), articles: [], checkins };
+
+      for (const a of articles) {
+        // 只存图片文件名，不存图片数据
+        const imageNames = [];
+        if (a.images && a.images.length > 0) {
+          for (const img of a.images) {
+            if (typeof img === 'string') imageNames.push(img);
+            else if (img instanceof Blob) imageNames.push(img.name || 'image.jpg');
+          }
+        }
+        exported.articles.push({
+          id: a.id, title: a.title, content: a.content,
+          images: imageNames,
+          createdAt: a.createdAt, updatedAt: a.updatedAt
+        });
+      }
+
+      const json = JSON.stringify(exported, null, 2);
+      // 大文件分段下载
+      const chunkSize = 5 * 1024 * 1024; // 5MB
+      if (json.length > chunkSize) {
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `薰陶法_${Utils.formatDateShort(new Date())}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = `薰陶法_${Utils.formatDateShort(new Date())}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      const n = exported.articles.length;
+      UI.showToast(`${n} 篇文章已导出。（请将整个文件夹复制到新电脑）`, 'success');
+    } catch (err) {
+      UI.showToast('导出失败: ' + err.message, 'error');
+    }
+  },
+
+  async importData() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json';
+    input.click();
+    const file = await new Promise(resolve => { input.onchange = (e) => resolve(e.target.files[0]); });
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data.version || !data.articles) { UI.showToast('无效的导出文件', 'error'); return; }
+
+      const hasImages = data.articles.some(a => a.images && a.images.length > 0);
+
+      // 如果有图片，让用户选择图片文件夹
+      if (hasImages) {
+        if (!(await FolderManager.hasFolder())) {
+          try {
+            UI.showToast('请选择存放图片的文件夹', 'info');
+            const picked = await FolderManager.pickFolder();
+            if (!picked) return;
+          } catch (e) { UI.showToast('请先选择图片存储文件夹', 'error'); return; }
+        } else {
+          UI.showToast('已检测到图片文件夹', 'info');
+        }
+      }
+
+      // 分批导入（每批 10 篇，避免事务超时）
+      const batchSize = 10;
+      for (let i = 0; i < data.articles.length; i += batchSize) {
+        const batch = data.articles.slice(i, i + batchSize);
+        await Promise.all(batch.map(item => {
+          const images = (item.images || []).filter(f => typeof f === 'string');
+          return DB.addArticle({
+            id: item.id, title: item.title, content: item.content,
+            images,
+            createdAt: item.createdAt, updatedAt: item.updatedAt
+          }).catch(() => {
+            // 如果 ID 冲突则更新
+            return DB.updateArticle({
+              id: item.id, title: item.title, content: item.content,
+              images,
+              createdAt: item.createdAt, updatedAt: item.updatedAt
+            });
+          });
+        }));
+      }
+
+      if (data.checkins) await DB.saveCheckinData(data.checkins);
+
+      UI.showToast(`导入成功（${data.articles.length} 篇文章）`, 'success');
+      if (this.currentTab === 'articles') UI.renderArticleList();
+      else this.switchTab('articles');
+    } catch (err) {
+      UI.showToast('导入失败: ' + err.message, 'error');
     }
   },
 

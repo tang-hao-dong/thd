@@ -1,0 +1,3 @@
+# User data files — exclude old image directory and export files
+/薰陶法_*.json
+/图片/
