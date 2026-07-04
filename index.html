@@ -14,7 +14,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;background:#FDF8F3;color:#2C1810;line-height:1.6;min-height:100dvh;overflow-x:hidden}
-body.lock-scroll{overflow:hidden;position:fixed;width:100%}
+body.lock-scroll{overflow:hidden;touch-action:none}
 img{max-width:100%;height:auto;display:block}
 button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
 input,textarea{font:inherit;color:inherit}
@@ -193,6 +193,7 @@ ul{list-style:none}
 .modal-content{
   background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   width:100%;max-height:92dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   animation:slideUp 0.25s ease;
   max-width:640px;
 }
@@ -201,10 +202,11 @@ ul{list-style:none}
 .modal-header{
   display:flex;align-items:center;justify-content:space-between;
   padding:16px 20px;border-bottom:1px solid var(--border);
-  position:sticky;top:0;background:var(--surface);z-index:1;
+  position:sticky;top:0;background:var(--surface);z-index:10;
+  box-shadow:0 1px 4px rgba(0,0,0,0.05);
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
-@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 .scroll-btns{display:flex;gap:4px;flex-shrink:0}
 .scroll-btns button{width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--primary);color:var(--primary);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .scroll-btns button:active{background:var(--primary);color:#fff}
