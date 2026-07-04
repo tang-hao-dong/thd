@@ -209,13 +209,7 @@ ul{list-style:none}
   box-shadow:0 1px 4px rgba(0,0,0,0.05);
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
-@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%;overflow:hidden;display:flex;flex-direction:column}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0}#article-detail-modal .modal-body{flex:1;overflow:hidden;padding:16px 20px}#article-detail-modal .modal-footer{flex-shrink:0;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));gap:8px;align-items:center}
-.page-columns{height:100%;column-width:calc(100vw - 40px);column-gap:40px;column-fill:auto;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x}
-.page-columns .detail-date,.page-columns .detail-text,.page-columns img{break-inside:avoid}
-.page-columns img{max-width:calc(100vw - 40px)}
-.page-nav{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text-secondary)}
-.page-nav .pg-btn{font-size:16px;padding:6px 10px;border-radius:6px;background:var(--bg);border:1px solid var(--border);-webkit-tap-highlight-color:transparent}
-.page-nav .pg-btn:active{background:var(--primary);color:#fff}}
+@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 .modal-close{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .modal-close:active{background:var(--border)}
 
@@ -963,22 +957,16 @@ const UI = {
 
   _lockScroll() {
     document.body.classList.add('lock-scroll');
+    // 阻止模态框背景的滚动穿透
+    this._preventTouch = (e) => { e.preventDefault(); };
+    document.getElementById('article-detail-modal').addEventListener('touchmove', this._preventTouch, {passive:false});
   },
   _unlockScroll() {
     document.body.classList.remove('lock-scroll');
-  },
-
-  _enableSwipeClose(modal, closeFn) {
-    let startY = 0, moving = false;
-    const onStart = (e) => { startY = e.touches[0].screenY; moving = true; };
-    const onMove = (e) => {
-      if (!moving) return;
-      const dy = e.touches[0].screenY - startY;
-      if (dy > 80) { closeFn(); cleanup(); }
-    };
-    const cleanup = () => { moving = false; modal.removeEventListener('touchstart', onStart); modal.removeEventListener('touchmove', onMove); };
-    modal.addEventListener('touchstart', onStart, { passive: true });
-    modal.addEventListener('touchmove', onMove, { passive: true });
+    if (this._preventTouch) {
+      document.getElementById('article-detail-modal').removeEventListener('touchmove', this._preventTouch, {passive:false});
+      this._preventTouch = null;
+    }
   },
 
   showToast(msg, type = 'info') {
@@ -1199,7 +1187,6 @@ const UI = {
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
     this._lockScroll();
-    this._enableSwipeClose(modal, () => this.closeArticleDetail());
 
     try {
       const article = await DB.getArticle(id);
@@ -1221,48 +1208,10 @@ const UI = {
       const dateHtml = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
       const contentHtml = await this._renderInlineContent(article.content, article.images);
       const isMobile = window.innerWidth <= 479;
-      bodyEl.innerHTML = isMobile
-        ? `<div class="page-columns">${dateHtml}${contentHtml}</div>`
-        : dateHtml + contentHtml;
-      if (isMobile) this._initPageNav();
+      bodyEl.innerHTML = dateHtml + contentHtml;
     } catch (err) {
       bodyEl.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
     }
-  },
-
-  _initPageNav() {
-    const cols = document.querySelector('#article-detail-modal .page-columns');
-    if (!cols) return;
-    const footer = document.querySelector('#article-detail-modal .modal-footer');
-    // Add page nav to footer
-    let nav = footer.querySelector('.page-nav');
-    if (!nav) {
-      nav = document.createElement('div');
-      nav.className = 'page-nav';
-      nav.innerHTML = `<button class="pg-btn" data-action="page-prev">◀</button><span id="page-indicator">1/1</span><button class="pg-btn" data-action="page-next">▶</button>`;
-      footer.appendChild(nav);
-    }
-    const update = () => {
-      const w = cols.clientWidth;
-      const page = Math.round(cols.scrollLeft / (w + 40)) + 1;
-      const total = Math.round((cols.scrollWidth - w) / (w + 40)) + 1;
-      document.getElementById('page-indicator').textContent = `${page}/${total || 1}`;
-      // Disable buttons at bounds
-      const prev = nav.querySelector('[data-action="page-prev"]');
-      const next = nav.querySelector('[data-action="page-next"]');
-      prev.style.opacity = page <= 1 ? '0.3' : '1';
-      next.style.opacity = page >= total ? '0.3' : '1';
-    };
-    cols.addEventListener('scroll', update, {passive:true});
-    // Initial update after render
-    setTimeout(update, 100);
-  },
-
-  _pageFlip(dir) {
-    const cols = document.querySelector('#article-detail-modal .page-columns');
-    if (!cols) return;
-    const w = cols.clientWidth;
-    cols.scrollBy({ left: dir * (w + 40), behavior: 'smooth' });
   },
 
   closeArticleDetail() {
@@ -1897,7 +1846,6 @@ const App = {
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
     UI._lockScroll();
-    UI._enableSwipeClose(modal, () => UI.closeArticleDetail());
     titleEl.textContent = article.title;
 
     let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
@@ -1933,9 +1881,7 @@ const App = {
       html += `<div class="detail-text">${UI._escapeHtml(content)}</div>`;
     }
 
-    const isMobile = window.innerWidth <= 479;
-    bodyEl.innerHTML = isMobile ? `<div class="page-columns">${html}</div>` : html;
-    if (isMobile) UI._initPageNav();
+    bodyEl.innerHTML = html;
   },
 
   async syncData() {
@@ -1999,12 +1945,6 @@ const App = {
         break;
       case 'close-detail':
         UI.closeArticleDetail();
-        break;
-      case 'page-prev':
-        UI._pageFlip(-1);
-        break;
-      case 'page-next':
-        UI._pageFlip(1);
         break;
       case 'close-editor':
         UI.closeArticleEditor();
