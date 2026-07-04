@@ -14,7 +14,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Noto Sans SC","Microsoft YaHei",sans-serif;background:#FDF8F3;color:#2C1810;line-height:1.6;min-height:100dvh;overflow-x:hidden}
-body.lock-scroll{overflow:hidden;touch-action:none}
+body.lock-scroll{overflow:hidden}
 img{max-width:100%;height:auto;display:block}
 button{cursor:pointer;font:inherit;border:none;background:none;color:inherit}
 input,textarea{font:inherit;color:inherit}
@@ -186,6 +186,8 @@ ul{list-style:none}
   background:rgba(0,0,0,0.4);
   display:flex;align-items:flex-end;justify-content:center;
   animation:fadeIn 0.2s ease;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
 .modal-overlay.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -194,6 +196,7 @@ ul{list-style:none}
   background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;
   width:100%;max-height:92dvh;overflow-y:auto;
   -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
   animation:slideUp 0.25s ease;
   max-width:640px;
 }
@@ -1198,8 +1201,6 @@ const UI = {
     modal.classList.remove('hidden');
     this._lockScroll();
     this._enableSwipeClose(modal, () => this.closeArticleDetail());
-    // 滚回顶部
-    modal.querySelector('.modal-content').scrollTop = 0;
 
     try {
       const article = await DB.getArticle(id);
@@ -1221,6 +1222,8 @@ const UI = {
       const dateHtml = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
       const contentHtml = await this._renderInlineContent(article.content, article.images);
       bodyEl.innerHTML = dateHtml + contentHtml;
+      // 渲染完成后滚回顶部
+      requestAnimationFrame(() => { modal.querySelector('.modal-content').scrollTop = 0; });
     } catch (err) {
       bodyEl.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
     }
@@ -1859,7 +1862,6 @@ const App = {
     modal.classList.remove('hidden');
     UI._lockScroll();
     UI._enableSwipeClose(modal, () => UI.closeArticleDetail());
-    modal.querySelector('.modal-content').scrollTop = 0;
     titleEl.textContent = article.title;
 
     let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
@@ -1896,6 +1898,7 @@ const App = {
     }
 
     bodyEl.innerHTML = html;
+    requestAnimationFrame(() => { modal.querySelector('.modal-content').scrollTop = 0; });
   },
 
   async syncData() {
@@ -1962,12 +1965,12 @@ const App = {
         break;
       case 'scroll-up': {
         const mc = document.querySelector('#article-detail-modal .modal-content');
-        if (mc) mc.scrollTop -= 350;
+        if (mc) { mc.scrollTop = Math.max(0, (mc.scrollTop || 0) - 350); }
         break;
       }
       case 'scroll-down': {
         const mc = document.querySelector('#article-detail-modal .modal-content');
-        if (mc) mc.scrollTop += 350;
+        if (mc) { mc.scrollTop = (mc.scrollTop || 0) + 350; }
         break;
       }
       case 'close-editor':
