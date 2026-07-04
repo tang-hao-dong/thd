@@ -187,7 +187,7 @@ ul{list-style:none}
   display:flex;align-items:flex-end;justify-content:center;
   animation:fadeIn 0.2s ease;
   overscroll-behavior:contain;
-  -webkit-overflow-scrolling:touch;
+  pointer-events:auto;
 }
 .modal-overlay.hidden{display:none}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -209,7 +209,10 @@ ul{list-style:none}
   box-shadow:0 1px 4px rgba(0,0,0,0.05);
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
-@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%;overflow:hidden;display:flex;flex-direction:column}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0}#article-detail-modal .modal-body{flex:1;overflow:hidden;padding:0;position:relative}#article-detail-modal .modal-footer{flex-shrink:0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.page-wrap{position:absolute;inset:0;padding:16px 20px;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y}
+.page-wrap .detail-text{font-size:18px;line-height:1.9}
+.scroll-btns{display:none}}
 .scroll-btns{display:flex;gap:4px;flex-shrink:0}
 .scroll-btns button{width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--primary);color:var(--primary);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .scroll-btns button:active{background:var(--primary);color:#fff}
@@ -1221,9 +1224,10 @@ const UI = {
 
       const dateHtml = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
       const contentHtml = await this._renderInlineContent(article.content, article.images);
-      bodyEl.innerHTML = dateHtml + contentHtml;
-      // 渲染完成后滚回顶部
-      requestAnimationFrame(() => { modal.querySelector('.modal-content').scrollTop = 0; });
+      const isMobile = window.innerWidth <= 479;
+      bodyEl.innerHTML = isMobile
+        ? `<div class="page-wrap">${dateHtml}${contentHtml}</div>`
+        : dateHtml + contentHtml;
     } catch (err) {
       bodyEl.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
     }
@@ -1897,8 +1901,8 @@ const App = {
       html += `<div class="detail-text">${UI._escapeHtml(content)}</div>`;
     }
 
-    bodyEl.innerHTML = html;
-    requestAnimationFrame(() => { modal.querySelector('.modal-content').scrollTop = 0; });
+    const isMobile = window.innerWidth <= 479;
+    bodyEl.innerHTML = isMobile ? `<div class="page-wrap">${html}</div>` : html;
   },
 
   async syncData() {
