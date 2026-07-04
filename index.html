@@ -205,9 +205,9 @@ ul{list-style:none}
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
 @media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
-.scroll-btns{position:fixed;right:16px;bottom:120px;z-index:250;display:flex;flex-direction:column;gap:8px}
-.scroll-btns button{width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-md);-webkit-tap-highlight-color:transparent}
-.scroll-btns button:active{transform:scale(0.92)}
+.scroll-btns{display:flex;gap:4px;flex-shrink:0}
+.scroll-btns button{width:30px;height:30px;border-radius:50%;background:var(--bg);border:1px solid var(--primary);color:var(--primary);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.scroll-btns button:active{background:var(--primary);color:#fff}
 .modal-close{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .modal-close:active{background:var(--border)}
 
@@ -391,6 +391,10 @@ ul{list-style:none}
   <div class="modal-content">
     <div class="modal-header">
       <h2 id="detail-title">文章</h2>
+      <div class="scroll-btns">
+        <button class="header-btn" data-action="scroll-up" aria-label="上滑" style="color:var(--primary)">▲</button>
+        <button class="header-btn" data-action="scroll-down" aria-label="下滑" style="color:var(--primary)">▼</button>
+      </div>
       <button class="modal-close" data-action="close-detail" aria-label="关闭">✕</button>
     </div>
     <div class="modal-body" id="detail-body"></div>
@@ -399,10 +403,6 @@ ul{list-style:none}
       <button class="btn btn-danger" data-action="delete-article" id="detail-delete-btn">删除</button>
       <button class="btn btn-primary" data-action="close-detail" style="flex:0.6">✕ 关闭</button>
     </div>
-  </div>
-  <div class="scroll-btns" id="scroll-btns">
-    <button data-action="scroll-up" aria-label="上滑">▲</button>
-    <button data-action="scroll-down" aria-label="下滑">▼</button>
   </div>
 </div>
 
@@ -1196,6 +1196,8 @@ const UI = {
     modal.classList.remove('hidden');
     this._lockScroll();
     this._enableSwipeClose(modal, () => this.closeArticleDetail());
+    // 滚回顶部
+    modal.querySelector('.modal-content').scrollTop = 0;
 
     try {
       const article = await DB.getArticle(id);
@@ -1855,6 +1857,7 @@ const App = {
     modal.classList.remove('hidden');
     UI._lockScroll();
     UI._enableSwipeClose(modal, () => UI.closeArticleDetail());
+    modal.querySelector('.modal-content').scrollTop = 0;
     titleEl.textContent = article.title;
 
     let html = `<div class="detail-date">${Utils.formatDate(article.createdAt)}</div>`;
@@ -1955,12 +1958,16 @@ const App = {
       case 'close-detail':
         UI.closeArticleDetail();
         break;
-      case 'scroll-up':
-        document.querySelector('#article-detail-modal .modal-content').scrollBy({ top: -350, behavior: 'smooth' });
+      case 'scroll-up': {
+        const mc = document.querySelector('#article-detail-modal .modal-content');
+        if (mc) mc.scrollTop -= 350;
         break;
-      case 'scroll-down':
-        document.querySelector('#article-detail-modal .modal-content').scrollBy({ top: 350, behavior: 'smooth' });
+      }
+      case 'scroll-down': {
+        const mc = document.querySelector('#article-detail-modal .modal-content');
+        if (mc) mc.scrollTop += 350;
         break;
+      }
       case 'close-editor':
         UI.closeArticleEditor();
         break;
