@@ -209,7 +209,7 @@ ul{list-style:none}
   box-shadow:0 1px 4px rgba(0,0,0,0.05);
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
-@media(max-width:479px){#article-detail-modal .modal-content{max-height:100dvh;border-radius:0;max-width:100%}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-header{top:0;padding-top:calc(12px + env(safe-area-inset-top,0px))}#article-detail-modal .modal-body{padding:16px 20px 80px}#article-detail-modal .modal-footer{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:479px){#article-detail-modal .modal-overlay{align-items:stretch;background:var(--surface)}#article-detail-modal .modal-content{height:100%;max-height:100%;border-radius:0;max-width:100%;display:flex;flex-direction:column;overflow:hidden}#article-detail-modal .modal-header{padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0}#article-detail-modal .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;padding:16px 20px}#article-detail-modal .modal-footer{flex-shrink:0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 .modal-close{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .modal-close:active{background:var(--border)}
 
@@ -957,16 +957,9 @@ const UI = {
 
   _lockScroll() {
     document.body.classList.add('lock-scroll');
-    // 阻止模态框背景的滚动穿透
-    this._preventTouch = (e) => { e.preventDefault(); };
-    document.getElementById('article-detail-modal').addEventListener('touchmove', this._preventTouch, {passive:false});
   },
   _unlockScroll() {
     document.body.classList.remove('lock-scroll');
-    if (this._preventTouch) {
-      document.getElementById('article-detail-modal').removeEventListener('touchmove', this._preventTouch, {passive:false});
-      this._preventTouch = null;
-    }
   },
 
   showToast(msg, type = 'info') {
