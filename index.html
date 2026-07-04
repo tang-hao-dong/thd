@@ -394,15 +394,15 @@ ul{list-style:none}
       <button class="modal-close" data-action="close-detail" aria-label="关闭">✕</button>
     </div>
     <div class="modal-body" id="detail-body"></div>
-    <div class="scroll-btns" id="scroll-btns">
-      <button data-action="scroll-up" aria-label="上滑">▲</button>
-      <button data-action="scroll-down" aria-label="下滑">▼</button>
-    </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" data-action="edit-article" id="detail-edit-btn">编辑</button>
       <button class="btn btn-danger" data-action="delete-article" id="detail-delete-btn">删除</button>
       <button class="btn btn-primary" data-action="close-detail" style="flex:0.6">✕ 关闭</button>
     </div>
+  </div>
+  <div class="scroll-btns" id="scroll-btns">
+    <button data-action="scroll-up" aria-label="上滑">▲</button>
+    <button data-action="scroll-down" aria-label="下滑">▼</button>
   </div>
 </div>
 
@@ -1956,10 +1956,10 @@ const App = {
         UI.closeArticleDetail();
         break;
       case 'scroll-up':
-        document.querySelector('#article-detail-modal .modal-content').scrollBy(0, -300);
+        document.querySelector('#article-detail-modal .modal-content').scrollBy({ top: -350, behavior: 'smooth' });
         break;
       case 'scroll-down':
-        document.querySelector('#article-detail-modal .modal-content').scrollBy(0, 300);
+        document.querySelector('#article-detail-modal .modal-content').scrollBy({ top: 350, behavior: 'smooth' });
         break;
       case 'close-editor':
         UI.closeArticleEditor();
