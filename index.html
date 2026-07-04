@@ -1956,10 +1956,10 @@ const App = {
         UI.closeArticleDetail();
         break;
       case 'scroll-up':
-        document.getElementById('detail-body').scrollBy(0, -300);
+        document.querySelector('#article-detail-modal .modal-content').scrollBy(0, -300);
         break;
       case 'scroll-down':
-        document.getElementById('detail-body').scrollBy(0, 300);
+        document.querySelector('#article-detail-modal .modal-content').scrollBy(0, 300);
         break;
       case 'close-editor':
         UI.closeArticleEditor();
