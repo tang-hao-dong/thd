@@ -1789,6 +1789,9 @@ const App = {
       return;
     }
 
+    // 恢复浏览历史
+    try { this._ghHistory = JSON.parse(localStorage.getItem('gh_history') || '[]'); } catch(e) {}
+
     this.currentTab = 'articles';
     App._renderGHList();
   },
@@ -1817,6 +1820,9 @@ const App = {
       </div>`;
     }
     html += '</div>';
+    // 文章总数
+    const total = data.articles.length;
+    html = `<div style="text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:12px">共 ${total} 篇文章</div>` + html;
     main.innerHTML = html;
     document.getElementById('fab')?.classList.add('hidden');
   },
@@ -1834,6 +1840,7 @@ const App = {
     this._ghHistory = this._ghHistory.filter(h => h.id !== article.id);
     this._ghHistory.push({ id: article.id, title: article.title, viewedAt: new Date().toISOString() });
     if (this._ghHistory.length > 50) this._ghHistory.shift();
+    try { localStorage.setItem('gh_history', JSON.stringify(this._ghHistory)); } catch(e) {}
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
     modal.classList.remove('hidden');
@@ -2013,9 +2020,11 @@ const App = {
 
   async randomPick() {
     if (this.isGH) {
-      const articles = this._ghArticles?.articles;
-      if (!articles || articles.length === 0) {
-        UI.showToast('还没有文章', 'info'); return;
+      const articles = (this._ghArticles?.articles || []).filter(
+        a => !this._ghHistory.some(h => h.id === a.id)
+      );
+      if (articles.length === 0) {
+        UI.showToast('已看过所有文章，请清空浏览历史', 'info'); return;
       }
       const a = articles[Math.floor(Math.random() * articles.length)];
       UI.showToast('🎲 抽到一篇！', 'success');
@@ -2181,6 +2190,7 @@ const App = {
     if (!confirm('确定清空所有浏览记录？')) return;
     if (this.isGH) {
       this._ghHistory = [];
+      localStorage.removeItem('gh_history');
     } else {
       await DB.clearHistory();
     }
