@@ -19,7 +19,7 @@
 在 `D:\桌面\薰陶法` 文件夹空白处 **右键 → 打开终端（或 Git Bash）**，运行这一行：
 
 ```bash
-git add -A && git commit -m "更新" && git push
+git add -A; git commit -m "更新"; git push
 ```
 
 > 这行命令会自动包含所有改动（新图片、修改的文件、删除的文件），一键推送。
