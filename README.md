@@ -53,7 +53,46 @@ git add -A; git commit -m "更新"; git push
 
 - 图片存在 `data/images/` 目录下
 - 首次粘贴图片时会引导你选择这个文件夹
-- `data/images/` 会跟随 git 一起推送到 GitHub，线上也能看到图
+
+> 💡 图片不再提交到 GitHub，而是上传到 Cloudflare R2（对象存储）。
+
+---
+
+## ☁️ Cloudflare R2 图片存储
+
+为了解决 GitHub 仓库大小限制，图片改为存储在 Cloudflare R2 上。
+
+### 初次设置（只需一次）
+
+1. 复制 `.env.example` → `.env`
+2. 打开 [Cloudflare R2](https://dash.cloudflare.com/) → R2 → 创建 Bucket（如 `xuntaofa`）
+3. 启用公开访问：Bucket Settings → R2.dev Domain → **Allow Access**
+4. 创建 API Token：账户主页 → Manage R2 API Tokens → 创建，权限选 **Admin Read+Write**
+5. 把配置填入 `.env`
+
+```
+R2_ACCOUNT_ID=你的AccountID
+R2_ACCESS_KEY_ID=你的AccessKey
+R2_SECRET_ACCESS_KEY=你的SecretKey
+R2_BUCKET=xuntaofa
+R2_PUBLIC_URL=https://xuntaofa.xxxx.r2.dev
+```
+
+6. 安装依赖：`npm install`
+
+### 日常使用
+
+写完文章后，在终端运行：
+
+```bash
+npm run upload
+```
+
+这会自动上传所有图片到 R2，并生成含 R2 URL 的 `data.json`。然后：
+
+```bash
+git push
+```
 
 ---
 
@@ -65,10 +104,14 @@ git add -A; git commit -m "更新"; git push
 ├── manifest.json       # PWA 配置
 ├── sw.js               # 离线缓存
 ├── CLAUDE.md           # 项目说明
+├── upload-r2.js        # R2 图片上传脚本
+├── .env.example        # R2 配置模板
+├── .env                # R2 配置（不提交 git）
+├── package.json        # npm 依赖（AWS S3 SDK）
 ├── icons/              # 应用图标
 ├── data/
-│   ├── data.json       # 文章数据（同步生成）
-│   ├── images/         # 图片文件
+│   ├── data.json       # 文章数据（含 R2 图片 URL）
+│   ├── images/         # 图片文件（不提交 git）
 │   └── .gitkeep
 └── .gitignore
 ```
