@@ -157,8 +157,33 @@ async function main() {
   process.stdout.write('\r                                          \r');
   console.log(`✅ 上传完成: ${uploaded} 张成功, ${failed} 张失败`);
 
-  // 合并旧记录并保存（保留未重新上传的文件记录）
+  // 合并记录
   const final = { ...uploadedBefore, ...newManifest };
+
+  // === 清理：删除 R2 上已不存在的本地文件 ===
+  const clean = process.argv.includes('--clean');
+  if (clean) {
+    const localKeys = new Set(allImages.map(({ key }) => key));
+    const orphans = Object.keys(uploadedBefore).filter(k => !localKeys.has(k));
+    if (orphans.length > 0) {
+      console.log(`🧹 清理 R2 中 ${orphans.length} 个不再存在的图片...`);
+      let cleaned = 0;
+      const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+      for (const key of orphans) {
+        try {
+          await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+          delete final[key];
+          cleaned++;
+        } catch (e) {
+          console.error(`\n⚠️ 删除失败: ${key} — ${e.message}`);
+        }
+      }
+      console.log(`✅ 清理完成: ${cleaned} 张`);
+    } else {
+      console.log('✅ 没有需要清理的图片');
+    }
+  }
+
   fs.writeFileSync(manifestPath, JSON.stringify(final), 'utf-8');
 
   // 生成 R2 URL 映射（包含所有图片，不限于本次上传的）
