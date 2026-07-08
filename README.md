@@ -29,7 +29,7 @@ npm run upload
 ### 第三步：推送到 GitHub
 
 ```bash
-git push
+git commit -am "更新" && git push
 ```
 
 等 1-2 分钟，刷新 `https://tang-hao-dong.github.io/thd/` 即可看到更新。
@@ -95,8 +95,8 @@ npm install
 # 1. 先在 app 中点 🔄 按钮，把 data.json 放入 data/
 # 2. 上传图片到 R2
 npm run upload
-# 3. 推送
-git push
+# 3. 提交并推送
+git commit -am "更新" && git push
 ```
 
 > `npm run upload` 会自动跳过已上传的图片，只传新增或修改过的。
