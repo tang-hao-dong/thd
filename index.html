@@ -209,11 +209,11 @@ ul{list-style:none}
   box-shadow:0 1px 4px rgba(0,0,0,0.05);
 }
 .modal-header h2{font-size:18px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:12px}
-@media(max-width:479px){#article-detail-modal .modal-overlay{align-items:stretch;background:var(--surface)}#article-detail-modal .modal-content{height:100%;max-height:100%;border-radius:0;max-width:100%;display:flex;flex-direction:column;overflow:hidden}#article-detail-modal .modal-header{padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0}#article-detail-modal .modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;padding:16px 20px}#article-detail-modal .modal-footer{flex-shrink:0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:479px){.modal-overlay{align-items:stretch;background:var(--surface)}.modal-content{height:70%;max-height:100%;border-radius:var(--radius-lg) var(--radius-lg) 0 0;max-width:100%;display:flex;flex-direction:column;overflow:hidden}#article-detail-modal .modal-overlay{background:var(--surface)}#article-detail-modal .modal-content{height:100%}.modal-header{padding-top:calc(12px + env(safe-area-inset-top,0px));flex-shrink:0}.modal-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;padding:16px 20px}.modal-footer{flex-shrink:0;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}}
 .modal-close{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);flex-shrink:0;-webkit-tap-highlight-color:transparent}
 .modal-close:active{background:var(--border)}
 
-.modal-body{padding:20px}
+.modal-body{padding:20px;overflow-y:auto}
 .modal-footer{
   display:flex;gap:10px;justify-content:flex-end;
   padding:16px 20px;border-top:1px solid var(--border);
@@ -941,6 +941,10 @@ const UI = {
   _page: 1,
   _pageSize: 12,
   _history: [],
+  _historyPage: 1,
+  _historyPageSize: 20,
+  _historyEntries: [],
+  _dupPairs: [],
   _objectUrls: [],
 
   _revokeObjectUrls() {
@@ -1452,36 +1456,37 @@ const UI = {
         }
       }
       pairs.sort((a, b) => b.sim - a.sim);
-
-      if (pairs.length === 0) {
-        body.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>没有发现重复文章，所有文章相似度均 &lt; 10%</p></div>`;
-        return;
-      }
-
-      let html = `<div class="dup-result">
-        <p style="margin-bottom:12px;color:var(--text-secondary);font-size:14px">
-          共检测到 <b style="color:var(--danger)">${pairs.length}</b> 对可能存在重复（相似度 > 10%）
-        </p>`;
-
-      for (const p of pairs) {
-        const pct = Math.round(p.sim * 100);
-        html += `<div class="dup-pair ${p.level === 'high' ? 'high' : ''}">
-          <span class="dup-pair-title" title="${this._escapeHtml(p.a.title)}">${this._escapeHtml(p.a.title)}</span>
-          <svg width="20" height="20" viewBox="0 0 20 20" style="flex-shrink:0"><path d="M2 10h16M10 2l8 8-8 8" stroke="var(--text-secondary)" stroke-width="2" fill="none"/></svg>
-          <span class="dup-pair-title" title="${this._escapeHtml(p.b.title)}">${this._escapeHtml(p.b.title)}</span>
-          <div class="dup-bar-wrap">
-            <div class="dup-bar" style="width:${pct}%"></div>
-            <div class="dup-bar-text">${pct}%</div>
-          </div>
-          <button class="btn btn-sm btn-danger" data-action="dup-delete" data-id="${p.a.id}" style="font-size:12px;padding:4px 10px;flex-shrink:0">删左</button>
-          <button class="btn btn-sm btn-danger" data-action="dup-delete" data-id="${p.b.id}" style="font-size:12px;padding:4px 10px;flex-shrink:0">删右</button>
-        </div>`;
-      }
-      html += '</div>';
-      body.innerHTML = html;
+      this._dupPairs = pairs;
+      this._renderDupResults();
     } catch (err) {
       body.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
     }
+  },
+
+  _renderDupResults() {
+    const body = document.getElementById('duplicate-body');
+    const pairs = this._dupPairs;
+    if (!pairs || pairs.length === 0) {
+      body.innerHTML = `<div class="empty-state"><div class="icon">✅</div><p>没有发现重复文章</p></div>`;
+      return;
+    }
+    let html = `<div class="dup-result">
+      <p style="margin-bottom:12px;color:var(--text-secondary);font-size:14px">
+        共检测到 <b style="color:var(--danger)">${pairs.length}</b> 对可能存在重复
+      </p>`;
+    for (const p of pairs) {
+      const pct = Math.round(p.sim * 100);
+      html += `<div class="dup-pair ${p.level === 'high' ? 'high' : ''}">
+        <span class="dup-pair-title" title="${this._escapeHtml(p.a.title)}">${this._escapeHtml(p.a.title)}</span>
+        <svg width="20" height="20" viewBox="0 0 20 20" style="flex-shrink:0"><path d="M2 10h16M10 2l8 8-8 8" stroke="var(--text-secondary)" stroke-width="2" fill="none"/></svg>
+        <span class="dup-pair-title" title="${this._escapeHtml(p.b.title)}">${this._escapeHtml(p.b.title)}</span>
+        <div class="dup-bar-wrap"><div class="dup-bar" style="width:${pct}%"></div><div class="dup-bar-text">${pct}%</div></div>
+        <button class="btn btn-sm btn-danger" data-action="dup-delete" data-id="${p.a.id}" style="font-size:12px;padding:4px 10px;flex-shrink:0">删左</button>
+        <button class="btn btn-sm btn-danger" data-action="dup-delete" data-id="${p.b.id}" style="font-size:12px;padding:4px 10px;flex-shrink:0">删右</button>
+      </div>`;
+    }
+    html += '</div>';
+    body.innerHTML = html;
   },
 
   closeDuplicateCheck() {
@@ -1498,7 +1503,6 @@ const UI = {
     body.innerHTML = '<div class="loading">加载中...</div>';
 
     try {
-      // GitHub Pages 模式使用内存历史，本地模式使用 IndexedDB
       let entries;
       if (App.isGH) {
         entries = App._ghHistory || [];
@@ -1512,22 +1516,46 @@ const UI = {
 
       // 按时间倒序
       entries.sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt));
-      const recent = entries.slice(0, 100);
 
-      const action = App.isGH ? 'gh-read' : 'open-article';
-      let html = '<div class="history-list">';
-      for (const h of recent) {
-        const time = Utils.formatDate(h.viewedAt);
-        html += `<div class="history-entry" data-action="${action}" data-id="${h.id}">
-          <span class="title">${this._escapeHtml(h.title)}</span>
-          <span class="time">${time}</span>
-        </div>`;
-      }
-      html += '</div>';
-      body.innerHTML = html;
+      this._historyEntries = entries;
+      this._historyPage = 1;
+      this._renderHistoryPage();
     } catch (err) {
       body.innerHTML = `<p style="color:var(--danger)">加载失败: ${err.message}</p>`;
     }
+  },
+
+  _renderHistoryPage() {
+    const entries = this._historyEntries;
+    if (!entries || entries.length === 0) return;
+    const totalPages = Math.max(1, Math.ceil(entries.length / this._historyPageSize));
+    if (this._historyPage > totalPages) this._historyPage = totalPages;
+    const start = (this._historyPage - 1) * this._historyPageSize;
+    const pageItems = entries.slice(start, start + this._historyPageSize);
+
+    const action = App.isGH ? 'gh-read' : 'open-article';
+    let html = '<div class="history-list">';
+    for (const h of pageItems) {
+      const time = Utils.formatDate(h.viewedAt);
+      html += `<div class="history-entry" data-action="${action}" data-id="${h.id}">
+        <span class="title">${this._escapeHtml(h.title)}</span>
+        <span class="time">${time}</span>
+      </div>`;
+    }
+    html += '</div>';
+
+    // 分页控件
+    if (totalPages > 1) {
+      html += '<div class="pagination" style="margin-top:12px">';
+      html += `<button class="page-btn${this._historyPage<=1?' disabled':''}" data-action="history-page" data-page="${this._historyPage-1}">‹</button>`;
+      for (let p = 1; p <= totalPages; p++) {
+        html += `<button class="page-btn${p===this._historyPage?' active':''}" data-action="history-page" data-page="${p}">${p}</button>`;
+      }
+      html += `<button class="page-btn${this._historyPage>=totalPages?' disabled':''}" data-action="history-page" data-page="${this._historyPage+1}">›</button>`;
+      html += '</div>';
+    }
+
+    document.getElementById('history-body').innerHTML = html;
   },
 
   closeHistoryView() {
@@ -1978,6 +2006,10 @@ const App = {
       case 'gh-read':
         this._renderGHDetail(el.dataset.id);
         break;
+      case 'history-page':
+        UI._historyPage = parseInt(el.dataset.page);
+        UI._renderHistoryPage();
+        break;
       case 'page':
         UI._page = parseInt(el.dataset.page);
         UI.renderArticleList();
@@ -2209,7 +2241,10 @@ const App = {
       }
       await DB.deleteArticle(id);
       UI.showToast('已删除', 'success');
-      UI.openDuplicateCheck();
+      // 从缓存中移除已删除的文章，不重新扫描
+      UI._dupPairs = UI._dupPairs.filter(p => p.a.id !== id && p.b.id !== id);
+      UI._renderDupResults();
+      if (this.currentTab === 'articles') UI.renderArticleList();
     } catch (err) {
       UI.showToast('删除失败: ' + err.message, 'error');
     }
