@@ -1,3 +1,13 @@
 # User data files — exclude old image directory and export files
 /薰陶法_*.json
 /图片/
+
+# Node modules
+node_modules/
+
+# Cloudflare R2 credentials
+.env
+
+# Images stored on R2, not in git
+data/images/
+!data/.gitkeep

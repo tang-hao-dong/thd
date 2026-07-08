@@ -1907,7 +1907,8 @@ const App = {
           if (typeof img === 'object' && img.data) {
             html += `<img src="${img.data}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy">`;
           } else if (typeof img === 'string') {
-            html += `<img src="data/images/${img}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
+            const url = img.startsWith('http') ? img : `data/images/${img}`;
+            html += `<img src="${url}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
           }
         }
       }
@@ -1917,7 +1918,8 @@ const App = {
         if (typeof img === 'object' && img.data) {
           html += `<img src="${img.data}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy">`;
         } else if (typeof img === 'string') {
-          html += `<img src="data/images/${img}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
+          const url = img.startsWith('http') ? img : `data/images/${img}`;
+          html += `<img src="${url}" alt="文章图片" style="margin:12px 0;border-radius:8px;max-width:100%" loading="lazy" onerror="this.style.display='none'">`;
         }
       }
       html += `<div class="detail-text">${UI._escapeHtml(content)}</div>`;
