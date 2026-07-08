@@ -97,19 +97,34 @@ async function main() {
   const imagesDir = path.join(__dirname, 'data', 'images');
   const dataJsonPath = path.join(__dirname, 'data', 'data.json');
 
-  console.log('📁 扫描图片目录...');
-  const images = scanDir(imagesDir);
-  console.log(`   找到 ${images.length} 张图片`);
+  // 读取已上传记录
+  const manifestPath = path.join(__dirname, 'data', '.r2-uploaded.json');
+  const uploadedBefore = fs.existsSync(manifestPath) ? JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) : {};
+  const forceAll = process.argv.includes('--force');
 
-  if (images.length === 0) {
+  console.log('📁 扫描图片目录...');
+  const allImages = scanDir(imagesDir);
+  // 过滤：只上传新文件或修改过的文件
+  const images = forceAll
+    ? allImages
+    : allImages.filter(({ path: filePath, key }) => {
+        const mtime = fs.statSync(filePath).mtimeMs;
+        return !uploadedBefore[key] || uploadedBefore[key] !== mtime;
+      });
+
+  if (allImages.length === 0) {
     console.log('⚠️ 没有图片需要上传，直接生成 data.json');
+  } else if (images.length === 0) {
+    console.log(`✅ ${allImages.length} 张图片均未变化，跳过上传`);
+  } else {
+    console.log(`   共 ${allImages.length} 张，其中 ${images.length} 张需要上传${forceAll ? ' (强制)' : ''}`);
   }
 
   // 并行上传（每批10张，大幅提速）
-  let uploaded = 0, failed = 0, finished = 0;
+  let uploaded = 0, failed = 0, finished = 0, newManifest = {};
   const batchSize = 10;
 
-  async function uploadOne({ filePath, key }) {
+  async function uploadOne({ path: filePath, key }) {
     try {
       const body = fs.readFileSync(filePath);
       await s3.send(new PutObjectCommand({
@@ -118,6 +133,8 @@ async function main() {
         Body: body,
         ContentType: mimeType(filePath),
       }));
+      // 记录成功上传的文件
+      newManifest[key] = fs.statSync(filePath).mtimeMs;
       uploaded++;
     } catch (err) {
       if (err.name === 'NoSuchBucket') {
@@ -140,9 +157,13 @@ async function main() {
   process.stdout.write('\r                                          \r');
   console.log(`✅ 上传完成: ${uploaded} 张成功, ${failed} 张失败`);
 
-  // 生成 R2 URL 映射
+  // 合并旧记录并保存（保留未重新上传的文件记录）
+  const final = { ...uploadedBefore, ...newManifest };
+  fs.writeFileSync(manifestPath, JSON.stringify(final), 'utf-8');
+
+  // 生成 R2 URL 映射（包含所有图片，不限于本次上传的）
   const urlMap = {};
-  for (const { key } of images) {
+  for (const { key } of allImages) {
     urlMap[key] = `${publicBase}/${key}`;
   }
 

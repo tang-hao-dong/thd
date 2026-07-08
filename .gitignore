@@ -10,4 +10,5 @@ node_modules/
 
 # Images stored on R2, not in git
 data/images/
+data/.r2-uploaded.json
 !data/.gitkeep
