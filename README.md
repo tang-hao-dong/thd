@@ -8,23 +8,29 @@
 
 添加或修改文章后，想把内容同步到线上看：
 
-### 第一步：同步数据
+### 第一步：同步文章数据
 
 1. 打开 `index.html`
 2. 点顶栏 **🔄 按钮** → 下载 `data.json`
 3. 把 `data.json` 放入 `data/` 目录，覆盖旧文件
 
-### 第二步：推送
+### 第二步：上传图片到 R2
 
-在 `D:\桌面\薰陶法` 文件夹空白处 **右键 → 打开终端（或 Git Bash）**，运行这一行：
+在 `D:\桌面\薰陶法` 文件夹空白处 **右键 → 打开终端**，运行：
 
 ```bash
-git add -A; git commit -m "更新"; git push
+npm run upload
 ```
 
-> 这行命令会自动包含所有改动（新图片、修改的文件、删除的文件），一键推送。
+> 首次使用前需运行 `npm install` 安装依赖，并配置 `.env`（参见下方 Cloudflare R2 设置）。
+>
+> 已上传过的图片会自动跳过，仅上传新增或修改的图片。如需全部重传，使用 `npm run upload -- --force`。
 
-### 第三步：查看
+### 第三步：推送到 GitHub
+
+```bash
+git push
+```
 
 等 1-2 分钟，刷新 `https://tang-hao-dong.github.io/thd/` 即可看到更新。
 
@@ -47,52 +53,53 @@ git add -A; git commit -m "更新"; git push
 | ✅ 签到 | 切换到 **签到** 标签 → 每日打卡 |
 | 📤 导出 | 导出全部数据（JSON） |
 | 📥 导入 | 从 JSON 恢复数据到新电脑 |
-| 🔄 同步 | 生成 `data.json` 用于 GitHub Pages |
+| 🔄 同步 | 导出 IndexedDB 文章数据到 `data.json` |
 
 ### 图片存储
 
-- 图片存在 `data/images/` 目录下
+- 图片存在本地 `data/images/` 目录下
 - 首次粘贴图片时会引导你选择这个文件夹
-
-> 💡 图片不再提交到 GitHub，而是上传到 Cloudflare R2（对象存储）。
+- 图片通过 `upload-r2.js` 上传到 Cloudflare R2，不提交到 Git
 
 ---
 
 ## ☁️ Cloudflare R2 图片存储
 
-为了解决 GitHub 仓库大小限制，图片改为存储在 Cloudflare R2 上。
-
 ### 初次设置（只需一次）
 
-1. 复制 `.env.example` → `.env`
-2. 打开 [Cloudflare R2](https://dash.cloudflare.com/) → R2 → 创建 Bucket（如 `xuntaofa`）
-3. 启用公开访问：Bucket Settings → R2.dev Domain → **Allow Access**
-4. 创建 API Token：账户主页 → Manage R2 API Tokens → 创建，权限选 **Admin Read+Write**
-5. 把配置填入 `.env`
+1. 复制 `.env.example` → `.env`，填入 R2 配置
+2. 在 [Cloudflare R2](https://dash.cloudflare.com/) 创建 Bucket
+3. Bucket Settings → R2.dev Domain → **Allow Access**
+4. Manage R2 API Tokens → 创建 Token，权限选 **Admin Read+Write**
+5. 将以下信息填入 `.env`：
 
 ```
 R2_ACCOUNT_ID=你的AccountID
 R2_ACCESS_KEY_ID=你的AccessKey
 R2_SECRET_ACCESS_KEY=你的SecretKey
-R2_BUCKET=xuntaofa
-R2_PUBLIC_URL=https://xuntaofa.xxxx.r2.dev
+R2_BUCKET=你的Bucket名
+R2_PUBLIC_URL=https://你的Bucket.xxxx.r2.dev
 ```
 
-6. 安装依赖：`npm install`
+6. 安装依赖：
+
+```bash
+npm install
+```
 
 ### 日常使用
 
-写完文章后，在终端运行：
+写完文章后三步走：
 
 ```bash
+# 1. 先在 app 中点 🔄 按钮，把 data.json 放入 data/
+# 2. 上传图片到 R2
 npm run upload
-```
-
-这会自动上传所有图片到 R2，并生成含 R2 URL 的 `data.json`。然后：
-
-```bash
+# 3. 推送
 git push
 ```
+
+> `npm run upload` 会自动跳过已上传的图片，只传新增或修改过的。
 
 ---
 
@@ -103,15 +110,14 @@ git push
 ├── index.html          # 主程序（所有功能）
 ├── manifest.json       # PWA 配置
 ├── sw.js               # 离线缓存
-├── CLAUDE.md           # 项目说明
 ├── upload-r2.js        # R2 图片上传脚本
 ├── .env.example        # R2 配置模板
-├── .env                # R2 配置（不提交 git）
-├── package.json        # npm 依赖（AWS S3 SDK）
+├── .env                # R2 配置（不提交）
+├── package.json        # npm 依赖
 ├── icons/              # 应用图标
 ├── data/
 │   ├── data.json       # 文章数据（含 R2 图片 URL）
-│   ├── images/         # 图片文件（不提交 git）
+│   ├── images/         # 图片文件（不提交）
 │   └── .gitkeep
 └── .gitignore
 ```
