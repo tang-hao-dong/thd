@@ -7,9 +7,10 @@
  *   3. npm run upload (或 node upload-r2.js)
  *
  * 功能:
- *   1. 扫描 data/images/ 下的所有图片
- *   2. 上传到 Cloudflare R2
- *   3. 生成含 R2 URL 的 data/data.json
+ *   1. 扫描 data/images/ 下的图片，上传新增/修改的
+ *   2. 自动删除 R2 上本地已不存在的图片
+ *   3. 本地未变化的图片保持不动
+ *   4. 生成含 R2 URL 的 data/data.json
  */
 
 const fs = require('fs');
@@ -160,28 +161,23 @@ async function main() {
   // 合并记录
   const final = { ...uploadedBefore, ...newManifest };
 
-  // === 清理：删除 R2 上已不存在的本地文件 ===
-  const clean = process.argv.includes('--clean');
-  if (clean) {
-    const localKeys = new Set(allImages.map(({ key }) => key));
-    const orphans = Object.keys(uploadedBefore).filter(k => !localKeys.has(k));
-    if (orphans.length > 0) {
-      console.log(`🧹 清理 R2 中 ${orphans.length} 个不再存在的图片...`);
-      let cleaned = 0;
-      const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
-      for (const key of orphans) {
-        try {
-          await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
-          delete final[key];
-          cleaned++;
-        } catch (e) {
-          console.error(`\n⚠️ 删除失败: ${key} — ${e.message}`);
-        }
+  // === 清理：自动删除 R2 上本地不存在的图片 ===
+  const localKeys = new Set(allImages.map(({ key }) => key));
+  const orphans = Object.keys(uploadedBefore).filter(k => !localKeys.has(k));
+  if (orphans.length > 0) {
+    console.log(`🧹 清理 R2 中 ${orphans.length} 个已删除的图片...`);
+    let cleaned = 0;
+    const { DeleteObjectCommand } = require('@aws-sdk/client-s3');
+    for (const key of orphans) {
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+        delete final[key];
+        cleaned++;
+      } catch (e) {
+        console.error(`\n⚠️ 删除失败: ${key} — ${e.message}`);
       }
-      console.log(`✅ 清理完成: ${cleaned} 张`);
-    } else {
-      console.log('✅ 没有需要清理的图片');
     }
+    console.log(`✅ 清理完成: ${cleaned} 张`);
   }
 
   fs.writeFileSync(manifestPath, JSON.stringify(final), 'utf-8');

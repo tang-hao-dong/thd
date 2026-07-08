@@ -24,7 +24,7 @@ npm run upload
 
 > 首次使用前需运行 `npm install` 安装依赖，并配置 `.env`（参见下方 Cloudflare R2 设置）。
 >
-> 已上传过的图片会自动跳过，仅上传新增或修改的图片。如需全部重传，使用 `npm run upload -- --force`。
+> 已上传过的图片会自动跳过；本地删除的图片会同步从 R2 清理；如需全部重传，使用 `npm run upload -- --force`。
 
 ### 第三步：推送到 GitHub
 
@@ -99,7 +99,7 @@ npm run upload
 git commit -am "更新" && git push
 ```
 
-> `npm run upload` 会自动跳过已上传的图片，只传新增或修改过的。
+> `npm run upload` 会自动处理：新增的上传、修改的覆盖、删除的清理。
 
 ---
 
