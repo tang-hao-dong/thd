@@ -105,14 +105,11 @@ async function main() {
     console.log('⚠️ 没有图片需要上传，直接生成 data.json');
   }
 
-  // 逐个上传
-  let uploaded = 0, skipped = 0, failed = 0;
-  for (let i = 0; i < images.length; i++) {
-    const { path: filePath, key } = images[i];
-    const fileSize = fs.statSync(filePath).size;
-    const pct = Math.round((i / images.length) * 100);
-    process.stdout.write(`\r   [${'='.repeat(pct/5)}${' '.repeat(20-pct/5)}] ${pct}%  ${path.basename(filePath)}`);
+  // 并行上传（每批10张，大幅提速）
+  let uploaded = 0, failed = 0, finished = 0;
+  const batchSize = 10;
 
+  async function uploadOne({ filePath, key }) {
     try {
       const body = fs.readFileSync(filePath);
       await s3.send(new PutObjectCommand({
@@ -129,7 +126,16 @@ async function main() {
       }
       console.error(`\n⚠️ 上传失败: ${key} — ${err.message}`);
       failed++;
+    } finally {
+      finished++;
+      const pct = Math.round((finished / images.length) * 100);
+      process.stdout.write(`\r   [${'='.repeat(Math.floor(pct/5))}${' '.repeat(20-Math.floor(pct/5))}] ${pct}%  (${finished}/${images.length})`);
     }
+  }
+
+  for (let i = 0; i < images.length; i += batchSize) {
+    const batch = images.slice(i, i + batchSize);
+    await Promise.all(batch.map(uploadOne));
   }
   process.stdout.write('\r                                          \r');
   console.log(`✅ 上传完成: ${uploaded} 张成功, ${failed} 张失败`);
