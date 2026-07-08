@@ -1570,6 +1570,8 @@ const App = {
   isGH: false,
   _ghArticles: [],
   _ghHistory: [],
+  _ghPage: 1,
+  _ghPageSize: 12,
 
   async init() {
     const host = window.location.hostname;
@@ -1831,10 +1833,16 @@ const App = {
       main.innerHTML = `<div class="empty-state"><div class="icon">📚</div><p>暂无文章</p></div>`;
       return;
     }
-    const articles = data.articles.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const all = data.articles.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const totalPages = Math.max(1, Math.ceil(all.length / this._ghPageSize));
+    if (this._ghPage > totalPages) this._ghPage = totalPages;
+    const start = (this._ghPage - 1) * this._ghPageSize;
+    const pageItems = all.slice(start, start + this._ghPageSize);
+
     let html = `<div class="random-section"><button class="random-btn" data-action="random-pick"><span class="icon">🎲</span> 随机一篇</button></div>
+    <div style="text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:12px">共 ${all.length} 篇文章</div>
     <div class="article-list">`;
-    for (const a of articles) {
+    for (const a of pageItems) {
       const date = Utils.formatDate(a.createdAt);
       const excerpt = Utils.truncate(a.content, 100);
       html += `<div class="article-card" data-id="${a.id}">
@@ -1848,9 +1856,18 @@ const App = {
       </div>`;
     }
     html += '</div>';
-    // 文章总数
-    const total = data.articles.length;
-    html = `<div style="text-align:center;font-size:13px;color:var(--text-secondary);margin-bottom:12px">共 ${total} 篇文章</div>` + html;
+
+    // 分页控件
+    if (totalPages > 1) {
+      html += '<div class="pagination" style="padding-bottom:20px">';
+      html += `<button class="page-btn${this._ghPage<=1?' disabled':''}" data-action="gh-page" data-page="${this._ghPage-1}">‹</button>`;
+      for (let p = 1; p <= totalPages; p++) {
+        html += `<button class="page-btn${p===this._ghPage?' active':''}" data-action="gh-page" data-page="${p}">${p}</button>`;
+      }
+      html += `<button class="page-btn${this._ghPage>=totalPages?' disabled':''}" data-action="gh-page" data-page="${this._ghPage+1}">›</button>`;
+      html += '</div>';
+    }
+
     main.innerHTML = html;
     document.getElementById('fab')?.classList.add('hidden');
   },
@@ -2005,6 +2022,10 @@ const App = {
         break;
       case 'gh-read':
         this._renderGHDetail(el.dataset.id);
+        break;
+      case 'gh-page':
+        this._ghPage = parseInt(el.dataset.page);
+        this._renderGHList();
         break;
       case 'history-page':
         UI._historyPage = parseInt(el.dataset.page);
