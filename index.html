@@ -1878,7 +1878,6 @@ const App = {
     // 记录浏览历史
     this._ghHistory = this._ghHistory.filter(h => h.id !== article.id);
     this._ghHistory.push({ id: article.id, title: article.title, viewedAt: new Date().toISOString() });
-    if (this._ghHistory.length > 500) this._ghHistory.shift();
     try { localStorage.setItem('gh_history', JSON.stringify(this._ghHistory)); } catch(e) {}
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
