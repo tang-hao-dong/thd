@@ -983,15 +983,9 @@ const UI = {
     main.innerHTML = `<div class="loading">加载中...</div>`;
 
     try {
-      // 加载历史（清理超过 50 条的旧记录）
+      // 加载历史
       try {
         this._history = await DB.getHistory();
-        if (this._history.length > 50) {
-          const keep = this._history.slice(-50);
-          await DB.clearHistory();
-          for (const h of keep) await DB.addHistory(h);
-          this._history = keep;
-        }
       } catch(e) { this._history = []; }
 
       const allArticles = await DB.getAllArticles();
@@ -1884,7 +1878,7 @@ const App = {
     // 记录浏览历史
     this._ghHistory = this._ghHistory.filter(h => h.id !== article.id);
     this._ghHistory.push({ id: article.id, title: article.title, viewedAt: new Date().toISOString() });
-    if (this._ghHistory.length > 50) this._ghHistory.shift();
+    if (this._ghHistory.length > 500) this._ghHistory.shift();
     try { localStorage.setItem('gh_history', JSON.stringify(this._ghHistory)); } catch(e) {}
 
     bodyEl.innerHTML = '<div class="loading">加载中...</div>';
